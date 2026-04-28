@@ -1,6 +1,6 @@
 experiment:
   name: root_only
-  seed: 42
+  seeds: [42, 123, 456, 789, 1024]
   num_episodes: 20000
   perturbation_episode: 10000
 

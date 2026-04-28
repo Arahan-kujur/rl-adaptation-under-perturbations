@@ -108,20 +108,21 @@ class CFRAgent:
     redistributed to the remaining legal actions.
     """
 
-    def __init__(self, policy):
+    def __init__(self, policy, num_actions=2):
         self.policy = policy
+        self.num_actions = num_actions
 
     def select_action(self, info_state, legal_actions, rng):
         if info_state in self.policy:
             probs = self.policy[info_state].copy()
-            mask = np.zeros(NUM_ACTIONS)
+            mask = np.zeros(self.num_actions)
             for a in legal_actions:
                 mask[a] = 1.0
             probs *= mask
             total = probs.sum()
             if total > 0:
                 probs /= total
-                return int(rng.choice(NUM_ACTIONS, p=probs))
+                return int(rng.choice(self.num_actions, p=probs))
         return int(rng.choice(legal_actions))
 
     def update(self, trajectory, reward):
