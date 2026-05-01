@@ -62,6 +62,8 @@ python run_experiments.py --config configs/liars_dice/ld_full_removal.yaml
 | Leduc-4 Poker | 504 | 3 | Poker (4 ranks) |
 | Liar's Dice (1d) | 24,576 | 13 | Dice |
 | Liar's Dice (2d) | 200,000+ | 25 | Dice (DQN) |
+| Coordination | -- | 3 | Cooperative |
+| Negotiation | -- | 11 | Bargaining |
 | IPD | ~32 | 2 | Matrix |
 
 All implemented from scratch. No external game libraries.
@@ -92,6 +94,8 @@ configs/                  Experiment configs (YAML)
   leduc4/                 Extended Leduc (4 ranks)
   liars_dice/             Liar's Dice 1-die (24k info sets)
   liars_dice2/            Liar's Dice 2-dice (200k+ info sets, DQN)
+  negotiation/            Ultimatum bargaining game
+  coordination/           Cooperative target-matching game
   matrix/                 IPD + Matching Pennies
   severity/               Timing x severity sweep
   stochastic/             Stochastic masking

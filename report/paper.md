@@ -143,7 +143,9 @@ The jump from CAC = 0 to 1 is delta = 0.85 (+0.21 normalized). The jump from 1 t
 | REINFORCE | Tabular | **-0.500** | -39.6 |
 | DQN | Neural | **-0.994** | -24.4 |
 
-All algorithms collapse. DQN reaches -0.994---more severe than tabular. Neural analysis (Figure: DQN Analysis) confirms the mechanism: after perturbation, DQN's policy entropy drops to near zero and Q-value gaps spike, confirming rapid convergence to a deterministic policy. Function approximation compresses policies toward extreme distributions faster than tabular epsilon-greedy, which retains residual stochasticity at the epsilon-floor.
+All algorithms collapse. DQN reaches -0.994---more severe than tabular. Neural analysis confirms the mechanism: after perturbation, DQN's policy entropy drops to near zero and Q-value gaps spike, confirming rapid convergence to a deterministic policy. Function approximation compresses policies toward extreme distributions faster than tabular epsilon-greedy, which retains residual stochasticity at the epsilon-floor.
+
+![DQN Analysis](latex/figures/dqn_analysis.png)
 
 ![Algorithm Overlay](../results/plots/algorithm_overlay.png)
 
@@ -169,6 +171,8 @@ Collapse holds across all four games, spanning 1 to 504 information sets. Severi
 **IPD: when perturbation aligns with equilibrium.** Removing "cooperate" in the Iterated Prisoner's Dilemma produces no collapse (post = +1.12). IPD Nash is always-defect; removing cooperate pushes P0 toward equilibrium. The threshold operates only when the perturbation forces the agent into a dominated regime where the opponent can extract surplus.
 
 **Liar's Dice: when the "removed" action retains strategic value.** Removing all claims from P0 in Liar's Dice forces challenge-only play. Neither tabular Q-Learning (1-die, 24,576 info sets; post = -0.032) nor DQN (2-dice, 200,000+ info sets; post = +0.008) collapses. Unlike forced fold in Kuhn, challenging is contingent on P0's private die and claim history. P0 retains genuine decision-making through the *timing* of challenges. This confirms the threshold depends on strategic flexibility, not action count.
+
+**Non-zero-sum domains: degradation without collapse.** In the cooperative Coordination game (match-the-target), forcing P0 to a single action (CAC = 0) degrades team performance (+1.57 -> +1.44, p = 0.001, d = -3.8) but does not produce convergence to the DEA. In the Negotiation game (ultimatum, 11 offer actions), forcing P0 to a single offer (CAC = 0) degrades outcomes; P1's policy shifts toward rejection once it detects P0's fixed offer, but this rejection is bounded. Retaining partial flexibility (offers 0-2, CAC = 3) reverses the degradation entirely. In contrast to competitive settings where zero contingency produces collapse to the DEA, cooperative and mixed-motive environments exhibit bounded degradation, suggesting the threshold interacts with the underlying interaction structure.
 
 **Timing invariance.** Perturbation at episodes 3k, 10k, 17k yields identical collapse (-0.926, -0.927, -0.925). The DEA is a structural attractor independent of training stage.
 

@@ -75,6 +75,9 @@ A Leduc variant with four ranks ($J, Q, K, A$) and three suits (12 cards). Same 
 \paragraph{Liar's Dice (1 die).}
 Two players each roll one six-sided die (private). Players alternate claiming a minimum count of a face value across both dice; claims must strictly increase. A player may challenge instead of claiming. On challenge, the claim is verified---if true the challenger loses, otherwise the claimer loses ($\pm 1$). 13 actions (12~claims + challenge). 24{,}576 information sets. Our CFR implementation yields Nash P0 value $\approx -0.076$.
 
+\paragraph{Coordination Game.}
+Two agents simultaneously choose among 3 actions to match a randomly revealed target. Payoff +1 if both match, 0 otherwise. 10 rounds/episode. \emph{Cooperative}, not competitive---the first non-zero-sum domain tested.
+
 \paragraph{Matching Pennies.}
 Two players, two actions (heads, tails), simultaneous single-shot. Nash: 50/50 mixed, value~0. 1 information set per player.
 
@@ -287,11 +290,12 @@ Kuhn Poker       & $-0.926$ & 12   & $0.27$ \\
 Leduc Poker      & $-0.252$ & 288  & $0.49$ \\
 Leduc-4 Poker    & $-0.185$ & $504$ & $0.49$ \\
 Liar's Dice (1d) & $-0.032$ & $24{,}576$ & $0.48^\dagger$ \\
+Coordination     & $+1.44^{\ddagger}$ & -- & -- \\
 Liar's Dice (2d) & $+0.008$ & $200{,}000{+}$ & $0.50^\dagger$ \\
 \bottomrule
 \end{tabular}
 
-{\small $^\dagger$Liar's Dice ``full removal'' forces challenge-only, which retains strategic value (see \S\ref{sec:boundaries}). 2-dice variant uses DQN (25 actions, $200{,}000{+}$ estimated info sets).}
+{\small $^\dagger$Challenge-only retains strategic value (\S\ref{sec:boundaries}). $^\ddagger$Cooperative game; forced single action reduces coordination but reward remains positive ($p\!=\!0.001$).}
 \end{table}
 
 Collapse holds across poker and matrix games (1--504 info sets). Liar's Dice at both scales (24{,}576 and $200{,}000{+}$ info sets) shows no collapse because challenge-only play retains strategic flexibility---a boundary condition consistent with Proposition~\ref{prop:residual}. Severity scales inversely with residual action options: Matching Pennies (most severe, 0.07) has zero residual options; Leduc variants (least severe, 0.49) retain fold/check-call. Under residual contingency, no game collapses.
@@ -305,6 +309,9 @@ Removing ``cooperate'' in the Iterated Prisoner's Dilemma produces no collapse (
 
 \paragraph{Liar's Dice: when the ``removed'' action retains strategic value.}
 Removing all claims from P0 in Liar's Dice forces challenge-only play. Neither tabular Q-Learning (1-die, 24{,}576 info sets; post $= -0.032$) nor DQN (2-dice, $200{,}000{+}$ info sets; post $= +0.008$) collapses. Unlike forced fold in Kuhn, challenging in Liar's Dice is a strategically meaningful action: it is contingent on P0's private die and the claim history. P0 retains genuine decision-making through the \emph{timing} of challenges, even though the action \emph{type} is fixed. This confirms that the threshold depends on whether strategic flexibility is preserved, not merely on the count of available action types.
+
+\paragraph{Non-zero-sum domains: degradation without collapse.}
+In the cooperative Coordination game (match-the-target), forcing P0 to a single action (CAC $= 0$) degrades team performance ($+1.57 \to +1.44$, $p = 0.001$, $d = -3.8$) but does not produce convergence to the DEA. In the Negotiation game (ultimatum, 11 offer actions), forcing P0 to a single offer (CAC $= 0$) degrades outcomes; crucially, P1's policy shifts toward rejection once it detects P0's fixed offer, but this rejection is bounded---P1 does not converge to unconditional rejection as it would under zero-sum exploitation pressure. Retaining partial flexibility (offers 0--2, CAC $= 3$) reverses the degradation entirely. In contrast to competitive settings where zero contingency produces collapse to the DEA, cooperative and mixed-motive environments exhibit bounded degradation, suggesting that the threshold interacts with the underlying interaction structure: zero-sum dynamics amplify the constraint into catastrophic exploitation, while cooperative dynamics produce performance loss without attractor convergence.
 
 \paragraph{Timing invariance.}
 Perturbation at episodes 3k, 10k, 17k yields identical collapse ($-0.926$, $-0.927$, $-0.925$). The DEA is a structural attractor independent of training stage.

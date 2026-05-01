@@ -135,6 +135,8 @@ def _parse_perturbation(config, action_map):
     removed_str = pert.get("removed_action")
     if removed_str and removed_str in action_map:
         removed = action_map[removed_str]
+    elif removed_str:
+        removed = removed_str
     else:
         default_actions = list(action_map.values())
         removed = default_actions[-1] if default_actions else 1
