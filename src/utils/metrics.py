@@ -160,11 +160,45 @@ def collapse_summary(all_seed_results, perturbation_ep, threshold,
 
 
 # ---------------------------------------------------------------------------
-# Exploitability (exact, Kuhn Poker)
+# Exploitability
 # ---------------------------------------------------------------------------
 
+def _exploitability_matching_pennies(policy):
+    """Exact exploitability for single-shot Matching Pennies.
+
+    Actions: 0=heads, 1=tails.
+    P0 wins (+1) if actions match, P1 wins (+1, so P0 gets -1) if different.
+    Nash equilibrium: both play 50/50, value = 0.
+    """
+    p0_probs = np.asarray(policy.get("p0", [0.5, 0.5]), dtype=float)
+    p1_probs = np.asarray(policy.get("p1", [0.5, 0.5]), dtype=float)
+
+    p0_heads, p0_tails = p0_probs[0], p0_probs[1]
+    p1_heads, p1_tails = p1_probs[0], p1_probs[1]
+
+    # BR as P0: play the action P1 plays most (match to win)
+    if p1_heads > p1_tails:
+        br_p0_value = p1_heads * 1.0 + p1_tails * (-1.0)
+    elif p1_tails > p1_heads:
+        br_p0_value = p1_tails * 1.0 + p1_heads * (-1.0)
+    else:
+        br_p0_value = 0.0  # tied: any action gives 0
+
+    # BR as P1: play the action P0 plays least (mismatch to win)
+    if p0_heads < p0_tails:
+        # P1 plays heads -> mismatches with P0's tails
+        br_p1_value = p0_tails * 1.0 + p0_heads * (-1.0)
+    elif p0_tails < p0_heads:
+        # P1 plays tails -> mismatches with P0's heads
+        br_p1_value = p0_heads * 1.0 + p0_tails * (-1.0)
+    else:
+        br_p1_value = 0.0  # tied: any action gives 0
+
+    return (br_p0_value + br_p1_value) / 2.0
+
+
 def compute_exploitability(policy, game_name):
-    """Compute exact exploitability for a given policy in Kuhn Poker.
+    """Compute exact exploitability for a given policy.
 
     Exploitability = (BR_value_p0 + BR_value_p1) / 2
     where BR_value_p0 is the value of best-responding as P0 against the policy
@@ -174,17 +208,20 @@ def compute_exploitability(policy, game_name):
     Parameters
     ----------
     policy : dict mapping info_state_str -> array of action probabilities
-        e.g. {"0": [0.8, 0.2], "1pb": [0.5, 0.5], ...}
+        For Kuhn: {"0": [0.8, 0.2], "1pb": [0.5, 0.5], ...}
+        For Matching Pennies: {"p0": [p_heads, p_tails], "p1": [...]}
     game_name : str
-        Currently only "kuhn" is supported.
+        "kuhn" or "matching_pennies"
 
     Returns
     -------
     float : exploitability in raw reward units
     """
+    if game_name == "matching_pennies":
+        return _exploitability_matching_pennies(policy)
     if game_name != "kuhn":
         raise NotImplementedError(
-            f"Exploitability not implemented for '{game_name}'. Only 'kuhn' is supported.")
+            f"Exploitability not implemented for '{game_name}'.")
 
     PASS, BET = 0, 1
     cards = [0, 1, 2]  # J, Q, K

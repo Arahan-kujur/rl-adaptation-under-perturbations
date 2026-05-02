@@ -128,7 +128,9 @@ The jump from CAC = 0 to 1 is delta = 0.85 (+0.21 normalized). The jump from 1 t
 
 **Frozen baseline.** QL-Frozen avoids the DEA (-0.141 vs -0.927; delta = -0.787, p = 0.004, d = -2.6). Co-adaptation---not the constraint---drives collapse.
 
-**Fixed opponent.** Against a static Nash opponent, Q-Learning drops only to -0.228 (identical to CFR; d = -8.3). Self-play produces -0.927. The regime difference (d = +220) confirms co-adaptation is necessary.
+**Fixed opponent.** Against a static Nash opponent, Q-Learning drops only to -0.228 (identical to CFR). Self-play produces -0.927. Co-adaptation is necessary.
+
+**PSRO.** Under PSRO with a 5-policy population, P0 post-perturbation reward improves to -0.418 (+/-0.062) -- substantially better than self-play (-0.927) but still degraded. PSRO mitigates co-adaptation-driven collapse but does not eliminate it: the structural vulnerability remains, bounded by population diversity.
 
 ![Frozen Baseline](../results/plots/frozen_full_removal.png)
 

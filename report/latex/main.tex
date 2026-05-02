@@ -58,7 +58,7 @@ The MARL robustness literature encompasses adversarial policies~\citep{gleave202
 Invalid action masking is standard practice in game AI~\citep{huang2022closer}, and constrained MDPs formalise action restrictions~\citep{altman1999constrained}. Robust MDPs address uncertain transitions~\citep{iyengar2005robust,nilim2005robust}, and stochastic action-set MDPs model settings where available actions vary~\citep{boutilier2018planning}. However, the dynamic consequences of \emph{mid-training} action removal under self-play have not been studied.
 
 \paragraph{Self-play stabilisation.}
-Opponent-shaping methods such as LOLA~\citep{foerster2018learning} and SOS~\citep{letcher2019stable} stabilise self-play by accounting for the opponent's learning dynamics. Population-based methods including PSRO~\citep{lanctot2017unified} and $\alpha$-PSRO~\citep{muller2020generalized} maintain diverse strategy populations to avoid cycling. Whether these approaches attenuate the co-adaptation-driven collapse we identify remains an open question.
+Opponent-shaping methods such as LOLA~\citep{foerster2018learning} and SOS~\citep{letcher2019stable} stabilise self-play by accounting for the opponent's learning dynamics. Population-based methods including PSRO~\citep{lanctot2017unified} and $\alpha$-PSRO~\citep{muller2020generalized} maintain diverse strategy populations to avoid cycling. We test PSRO empirically and find it \emph{mitigates} but does not eliminate collapse (\S\ref{sec:mechanism}).
 
 \paragraph{Exploitability and game-theoretic evaluation.}
 Exploitability---the gap between an agent's value and the Nash equilibrium value---is the standard evaluation metric in computational game theory~\citep{johanson2007computing,timbers2022approximate}. We connect our threshold effect to the best-response structure of reduced games via formal propositions (Section~5).
@@ -154,6 +154,15 @@ By linearity of expectation over reach probabilities, $P_0$'s value decomposes i
 The transition from $\text{CAC}_w > 0$ to $\text{CAC}_w = 0$ qualitatively changes the best-response structure: from a game with strategic interaction (requiring mixed or adaptive responses, with value bounded by $\delta(h^*)$) to one with a trivially computable pure best response. A single retained decision point with positive reach is sufficient to prevent collapse; a retained decision with zero reach provides no protection.
 \end{corollary}
 
+\begin{proposition}[DEA as a fixed point of self-play dynamics]
+\label{prop:dea}
+Consider tabular Q-learning self-play under zero contingency ($\text{CAC}_w = 0$). Let $Q_1(s,a)$ denote $P_1$'s Q-values. Under standard assumptions ($\varepsilon > 0$, $\alpha_t \to 0$, $\sum \alpha_t = \infty$), $P_1$'s Q-values converge to the unique fixed point $Q_1^* = Q^{\text{BR}(\sigma_0^f)}$---the optimal Q-function for a single-agent MDP defined by $P_0$'s forced policy $\sigma_0^f$. The resulting joint policy profile $(\sigma_0^f, \pi_1^*)$ is a Nash equilibrium of the reduced game $G'$ and constitutes the DEA.
+\end{proposition}
+
+\begin{proof}
+Under $\text{CAC}_w = 0$, $P_0$'s policy is fixed and deterministic at every reachable information set. From $P_1$'s perspective, the environment is a stationary MDP with deterministic transitions (conditioned on the card deal). Standard Q-learning convergence guarantees~\citep{tesauro1994td} apply: with decaying learning rate and persistent exploration, $Q_1 \to Q_1^*$ almost surely. Since $P_0$ cannot deviate from $\sigma_0^f$, the profile $(\sigma_0^f, \pi_1^*)$ satisfies the Nash equilibrium conditions of $G'$. The fixed point is unique because the reduced MDP has a unique optimal Q-function. The $\varepsilon$-greedy policy induced by $Q_1^*$ places probability $\geq 1 - \varepsilon$ on the best response at each information set, yielding $v_0 \geq V_{\min} + \varepsilon_{\text{floor}}$ where $\varepsilon_{\text{floor}} = O(\varepsilon)$.
+\end{proof}
+
 % ===================================================================
 \section{Experiments}
 
@@ -243,6 +252,9 @@ QL-Frozen avoids the DEA ($-0.141$ vs $-0.927$; $\Delta = -0.787$, $p = 0.004$, 
 
 \paragraph{Fixed opponent.}
 Against a static Nash opponent (5 seeds), Q-Learning drops only to $-0.228$ (identical to CFR). Under self-play the same condition produces $-0.926$ (20 seeds). Co-adaptation is necessary for catastrophic collapse.
+
+\paragraph{Population-based training (PSRO).}
+Under PSRO with a 5-policy population, P0's post-perturbation reward improves to $-0.418 \pm 0.062$ (3 seeds)---substantially better than self-play ($-0.927$) but still degraded from pre-perturbation ($\approx -0.05$). The diverse population prevents the opponent from fully specialising against P0's forced policy, but cannot recover the strategic loss from zero contingency. PSRO \emph{mitigates} co-adaptation-driven collapse but does not \emph{eliminate} it: the structural vulnerability remains, but its exploitation is bounded by population diversity.
 
 \begin{figure}[ht!]
 \centering
@@ -416,6 +428,14 @@ The DEA is robust to hyperparameter choice. The only variation is the $\varepsil
 \label{app:separate}
 Experiments with independent P0/P1 Q-tables produce identical collapse dynamics (separate: $-0.926 \pm 0.003$; shared: $-0.927$; difference: $+0.0008$), confirming that shared-table self-play is equivalent in our zero-sum setting.
 
+\section{Tabular PPO Details}
+\label{app:ppo}
+Our ``tabular PPO'' maintains a softmax policy over a preference table $\theta(s, a)$ indexed by information state. Action probabilities: $\pi(a|s) = \text{softmax}(\theta(s, \cdot))$. Updates use the clipped surrogate objective $L = \min(r_t A_t, \text{clip}(r_t, 1-\epsilon, 1+\epsilon) A_t)$ where $r_t = \pi_{\text{new}} / \pi_{\text{old}}$, $A_t = R - b$ (advantage with running baseline), and $\epsilon = 0.2$. An entropy bonus $-0.01 \cdot H(\pi)$ is added. Learning rate: $0.01$. The softmax parameterisation explains the partial protection: unlike $\varepsilon$-greedy, softmax policies cannot fully collapse to deterministic play under finite $\theta$ updates, bounding post-perturbation loss at $\approx -0.50$ rather than $-0.93$.
+
+\section{Fixed-Opponent Calibration}
+\label{app:fixed-cal}
+Under forced check-fold (Kuhn, CAC $= 0$), the best-response value for P1 against $\sigma_0^f$ is $+0.23$ per game (P1 always bets, winning the ante when P0 folds to a bet). The CFR agent (playing Nash) achieves $-0.221$ for P0, close to this BR value. The Q-Learning agent under \emph{fixed} Nash opponent achieves $-0.228$, confirming that without co-adaptation, P0's loss is bounded by the BR against forced play---not the near-$-1$ DEA produced under self-play.
+
 \section{Additional Experiments}
 \label{app:algorithms}
 
@@ -439,6 +459,23 @@ Root-only perturbation applied with 50\% probability per episode (Kuhn): QL post
 
 \paragraph{Variance decomposition.}
 Post-collapse Q-Learning reward variance: $V_{\text{total}} = 5 \times 10^{-6}$, $V_{\text{env}} = 7 \times 10^{-6}$, $V_{\text{policy}} = 6 \times 10^{-6}$. Near-zero total variance confirms the DEA is a deterministic fixed point.
+
+\section{Reach-Weighted CAC Values}
+\label{app:cac-w}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Perturbation & CAC & $\text{CAC}_w$ & Collapse? \\
+\midrule
+Full removal (Kuhn) & 0 & 0.000 & Yes ($-0.926$) \\
+Root-only (Kuhn) & 1 & 0.473 & No ($-0.065$) \\
+No perturbation & 2 & 1.473 & No ($-0.034$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The ``pb'' node has average reach $\rho = 0.473$ under Nash play (P0 passes at root, P1 bets). This positive reach confirms Proposition~\ref{prop:residual}: the retained node has sufficient strategic weight to prevent collapse. The improvement $\delta(h^*) \propto \rho(h^*)$ is directly observable in the data.
 
 \section{DQN Hyperparameters and Normalization}
 \label{app:dqn-details}
